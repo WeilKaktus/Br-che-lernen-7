@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schoko-Bruch Abenteuer!</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f8ff; 
+            color: #4a4a4a; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #ffffff; 
+            padding: 25px;
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 650px; 
+        }
+        .page {
+            width: 100%;
+        }
+        #canvasContainer {
+            margin-bottom: 20px;
+            border: 3px dashed #ffcc5c; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            background-color: #fff; 
+            width: 340px; 
+            height: 260px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #problemCanvasContainer {
+            margin-bottom: 20px;
+            border: 3px dashed #66a6ff;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #f7faff;
+            width: 340px; 
+            height: 260px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .explanation-area, #problemText {
+            background-color: #lightgreen; 
+            border: 2px solid #90ee90; 
+            color: #333; 
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            min-height: 90px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.2em; 
+            line-height: 1.6;
+            width: 100%;
+            box-sizing: border-box;
+            font-weight: bold;
+        }
+        #problemText {
+            background-color: #e0f7fa;
+            border-color: #4dd0e1;
+        }
+        .navigation-buttons { 
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            justify-content: center;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        .controls, #problemPageContent {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            margin-top: 10px; 
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column; 
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 300px; 
+        }
+        label {
+            font-size: 1.1em; 
+            font-weight: bold;
+            color: #5d4037; 
+        }
+        input[type="number"] {
+            padding: 12px;
+            border: 2px solid #87ceeb; 
+            border-radius: 10px;
+            width: 100px;
+            font-size: 1.1em;
+            text-align: center;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+        }
+        h1 {
+            color: #ff4500; 
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 2.2em; 
+        }
+        p.hinweis {
+            font-size: 1em;
+            color: #4682b4; 
+            text-align: center;
+            max-width: 500px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        button {
+            background-image: linear-gradient(to bottom, #ffd700, #ffa500); 
+            color: #4b3832; 
+            border: 2px solid #daa520; 
+            padding: 15px 30px; 
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0px 4px 0px #b8860b; 
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+        }
+        button#prevButton, button#backToMainButton { 
+             background-image: linear-gradient(to bottom, #silver, #gray);
+             border-color: #darkgray;
+             box-shadow: 0px 4px 0px #555;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 6px 0px #b8860b;
+        }
+         button#prevButton:hover, button#backToMainButton:hover {
+            box-shadow: 0px 6px 0px #555;
+        }
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0px 2px 0px #b8860b;
+        }
+        button#prevButton:active, button#backToMainButton:active {
+            box-shadow: 0px 2px 0px #555;
+        }
+        button:disabled {
+            background-image: linear-gradient(to bottom, #d3d3d3, #a9a9a9); 
+            color: #666;
+            border-color: #888;
+            box-shadow: 0px 4px 0px #666;
+            cursor: not-allowed;
+        }
+        #geminiButton, #tasksButton { 
+            background-image: linear-gradient(to bottom, #89f7fe, #66a6ff);
+            border-color: #558dff;
+            box-shadow: 0px 4px 0px #406ac8;
+            margin-top: 15px;
+        }
+         #geminiButton:hover, #tasksButton:hover {
+            box-shadow: 0px 6px 0px #406ac8;
+        }
+        #geminiButton:active, #tasksButton:active {
+             box-shadow: 0px 2px 0px #406ac8;
+        }
+        #nextProblemButton {
+            background-image: linear-gradient(to bottom, #50C878, #2E8B57);
+            border-color: #2E8B57;
+            box-shadow: 0px 4px 0px #1A522E;
+        }
+        #nextProblemButton:hover {
+             box-shadow: 0px 6px 0px #1A522E;
+        }
+        #nextProblemButton:active {
+             box-shadow: 0px 2px 0px #1A522E;
+        }
+        #answerOptions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .answer-btn {
+            padding: 20px 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .correct-outline {
+            border: 5px solid #4CAF50 !important;
+            box-shadow: 0px 0px 10px #4CAF50 !important;
+        }
+        #feedbackArea {
+            margin-top: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            min-height: 40px;
+        }
+        #feedbackArea.correct { color: #2ecc71; }
+        #feedbackArea.incorrect { color: #e74c3c; }
+        #problemAreaLoading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 1.2em;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 6px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .task-button-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .task-button {
+            background-image: linear-gradient(to bottom, #ffeb3b, #fbc02d);
+            border-color: #f9a825;
+            box-shadow: 0px 4px 0px #f57f17;
+            font-size: 1.1em;
+            flex-grow: 1;
+        }
+        .task-button:hover {
+            box-shadow: 0px 6px 0px #f57f17;
+        }
+        .help-button {
+            background-image: linear-gradient(to bottom, #d3d3d3, #a9a9a9);
+            border: 2px solid #888;
+            box-shadow: 0px 4px 0px #666;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            padding: 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .help-button:hover {
+            box-shadow: 0px 6px 0px #555;
+            transform: translateY(-2px);
+        }
+        .help-button:active {
+            box-shadow: 0px 2px 0px #555;
+            transform: translateY(1px);
+        }
+        .help-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .help-modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: left;
+        }
+        .help-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2em;
+            cursor: pointer;
+            color: #888;
+        }
+        .frac-container {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            font-size: 1.5em;
+        }
+        .numerator, .denominator {
+            line-height: 1;
+        }
+        .fraction-bar {
+            height: 2px;
+            background-color: #000;
+            width: 100%;
+        }
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #66a6ff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+        #levelUpMessage {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #50C878;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 1001;
+            animation: fadeOut 3s forwards;
+            white-space: nowrap;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; display: none; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div id="scoreDisplay">
+            <span>Punkte: <span id="scoreValue">0</span></span>
+            <span>Level: <span id="levelValue">1</span></span>
+        </div>
+        <div id="levelUpMessage" class="hidden"></div>
+
+        <div id="mainPage" class="page">
+            <h1>Dein Schoko-Bruch Abenteuer!</h1>
+            <div class="explanation-area" id="explanationText">
+                Hallo, kleiner Entdecker! Bist du bereit für ein Schoko-Abenteuer? Los geht's!
+            </div>
+            <div id="canvasContainer"></div>
+            <div class="navigation-buttons">
+                <button id="prevButton" disabled>Zurück</button>
+                <button id="nextButton">Weiter geht's!</button>
+            </div>
+            <div class="controls hidden" id="interactiveControls">
+                <p class="hinweis">Klasse! Jetzt bist du der Schoko-Meister! Probier selbst aus, wie viele Stücke du teilen und naschen kannst!</p>
+                <div class="control-group">
+                    <label for="nennerInput">In so viele Stücke teilen:</label>
+                    <input type="number" id="nennerInput" value="4" min="1" max="12"> </div>
+                <div class="control-group">
+                    <label for="zaehlerInput">So viele Stücke nehm' ich mir:</label>
+                    <input type="number" id="zaehlerInput" value="1" min="0" max="12">
+                </div>
+                <button id="geminiButton">✨ Textaufgabe ausdenken</button>
+            </div>
+            <div class="navigation-buttons">
+                 <button id="tasksButton">Interaktive Aufgaben</button>
+            </div>
+        </div>
+
+        <div id="taskTypesPage" class="page hidden">
+            <h1>Wähle deine Aufgabe!</h1>
+            <div class="explanation-area">
+                Wähle eine Kategorie, um dein Bruch-Wissen zu testen.
+            </div>
+            <div id="taskOptions" class="controls">
+                <div class="task-button-container">
+                    <button class="task-button" data-task-type="visualFraction">Brüche darstellen</button>
+                    <button class="help-button" data-task-type="visualFraction">?</button>
+                </div>
+                <div class="task-button-container">
+                    <button class="task-button" data-task-type="fractionOfQuantity">Bruchteile bestimmen</button>
+                    <button class="help-button" data-task-type="fractionOfQuantity">?</button>
+                </div>
+                <div class="task-button-container">
+                    <button class="task-button" data-task-type="expandFraction">Brüche erweitern</button>
+                    <button class="help-button" data-task-type="expandFraction">?</button>
+                </div>
+                <div class="task-button-container">
+                    <button class="task-button" data-task-type="reduceFraction">Brüche kürzen</button>
+                    <button class="help-button" data-task-type="reduceFraction">?</button>
+                </div>
+                <div class="task-button-container">
+                    <button class="task-button" data-task-type="fractionToDecimal">Brüche in Dezimalzahlen</button>
+                    <button class="help-button" data-task-type="fractionToDecimal">?</button>
+                </div>
+            </div>
+            <div class="navigation-buttons">
+                <button id="backFromTaskTypesButton">Zurück zum Abenteuer</button>
+            </div>
+        </div>
+
+        <div id="problemPage" class="page hidden">
+            <h1>Aufgaben-Rätsel!</h1>
+            <div id="problemPageContent">
+                </div>
+            <div class="navigation-buttons">
+                 <button id="backToMainButton">Zurück zum Abenteuer</button>
+            </div>
+        </div>
+        
+        <div id="helpModal" class="help-modal-overlay hidden">
+            <div class="help-modal-content">
+                <span id="closeHelpModal" class="help-modal-close">&times;</span>
+                <div id="helpContent"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Global variables
+        let nennerInput, zaehlerInput, explanationTextDiv, nextButton, prevButton, geminiButton, backToMainButton;
+        let interactiveControlsDiv, mainPage, problemPage, problemPageContent;
+        let schokoSketch, problemSketch, tasksButton, taskTypesPage, backFromTaskTypesButton;
+        let nenner = 1, zaehler = 1, animationsSchritt = 0;
+        let currentTaskType = null;
+        let score = 0;
+        let level = 1;
+        let answered = false;
+        const apiKey = "AIzaSyCgBVu2ApKLD6tz1TS8vYczb0KkX6vr4ro";
+
+        const LEVEL_UP_THRESHOLDS = [5, 10, 20, 40, 70, 100]; // Punkte, um das nächste Level zu erreichen
+        const LEVEL_COMMENTS = {
+            1: "Klasse!",
+            2: "Weiter so!",
+            3: "Fantastisch!",
+            4: "Du bist unschlagbar!",
+            5: "Meister der Brüche!",
+            6: "Professor der Mathematik!"
+        };
+
+        const animationsSequenz = [
+            { text: "Hallo, Schoko-Fan! Schau mal, hier ist EINE ganze Tafel leckere Schokolade!", n: 1, z: 1, showBruchSymbol: false },
+            { text: "Diese ganze Tafel gehört uns! Das ist 1 von 1 Teil.", n: 1, z: 1, showBruchSymbol: false }, 
+            { text: "Stell dir vor, du willst mit einem Freund teilen. Knacks! Du brichst die Schokolade genau in der Mitte durch. Jetzt gibt es ZWEI gleich große Stücke!", n: 2, z: 0, showBruchSymbol: false, nennerFokus: true }, 
+            { text: "Siehst du die Zahl UNTEN? Das ist der Nenner. Die 2 sagt uns: 'Die Schokolade ist jetzt in 2 superfaire Stücke geteilt!'", n: 2, z: 0, showBruchSymbol: true, showOnlyNennerRelevant: true, nennerFokus: true },
+            { text: "Wenn du dir EIN Stück davon schnappst, hast du 1 von den 2 Stücken. Das ist dann die Hälfte!", n: 2, z: 1, showBruchSymbol: true, zaehlerFokus: true },
+            { text: "Und die Zahl OBEN? Das ist der Zähler. Die 1 sagt uns: 'Du hast dir gerade 1 tolles Stück ausgesucht!'", n: 2, z: 1, showBruchSymbol: true, zaehlerFokus: true },
+            { text: "Was, wenn noch ein Freund kommt? Dann teilst du die Schokolade in DREI Stücke. Der Nenner ist dann 3.", n: 3, z: 0, showBruchSymbol: true, showOnlyNennerRelevant: true, nennerFokus: true },
+            { text: "Und wenn du dir ZWEI von diesen drei Stücken nimmst? Dann hast du 2 von 3 Stücken.", n: 3, z: 2, showBruchSymbol: true, zaehlerFokus: true },
+            { text: "Stell dir vor, die Tafel wird in 4 Stücke geteilt und du nimmst ALLE 4! Mmmh! Dann hast du wieder die GANZE Schokolade!", n: 4, z: 4, showBruchSymbol: true },
+            { text: "Oder du teilst in 6 Stücke und nimmst dir 5 davon. Fast die ganze Tafel!", n: 6, z: 5, showBruchSymbol: true },
+            { text: "Merk dir: Die Zahl UNTEN (Nenner) verrät, in wie viele Stücke alles geteilt ist. Die Zahl OBEN (Zähler) verrät, wie viele Stücke du dir anschaust oder nimmst!", n: 'N', z: 'Z', showBruchSymbol: true }, 
+            { text: "Spitze! Du bist ein echter Bruch-Experte! Jetzt darfst du selbst zaubern!", n: 4, z: 1, showBruchSymbol: true } 
+        ];
+
+        // Constants
+        const SCHOKO_FARBE_GANZ = [101, 67, 33]; 
+        const SCHOKO_FARBE_GENOMMEN = [210, 105, 30]; 
+        const LINIE_FARBE = [255, 255, 255];
+        const ZAEHLER_FARBE = [0, 100, 255]; 
+        const NENNER_FARBE = [255, 0, 0];   
+        const BRUCHSTRICH_FARBE = [0, 0, 0]; 
+        const FOKUS_UMRANDUNG_ZAEHLER = [52, 152, 219]; 
+        const FOKUS_UMRANDUNG_NENNER = [231, 76, 60];   
+        const SCHOKO_BREITE = 300;
+        const SCHOKO_HOEHE = 150;
+        const RAND_ABSTAND = 20;
+        const BRUCH_TEXT_GROESSE = 48;
+        const CANVAS_HOEHE_EXTRA = 70; 
+        
+        function setup() {
+            loadScore(); // Lade den gespeicherten Punktestand
+            updateScoreDisplay(); // Zeige ihn an
+
+            mainPage = select('#mainPage');
+            problemPage = select('#problemPage');
+            problemPageContent = select('#problemPageContent');
+            explanationTextDiv = select('#explanationText');
+            nextButton = select('#nextButton');
+            prevButton = select('#prevButton'); 
+            interactiveControlsDiv = select('#interactiveControls');
+            nennerInput = select('#nennerInput');
+            zaehlerInput = select('#zaehlerInput');
+            geminiButton = select('#geminiButton'); 
+            backToMainButton = select('#backToMainButton');
+            tasksButton = select('#tasksButton');
+            taskTypesPage = select('#taskTypesPage');
+            backFromTaskTypesButton = select('#backFromTaskTypesButton');
+
+            nextButton.mousePressed(naechsterSchritt);
+            prevButton.mousePressed(vorherigerSchritt); 
+            geminiButton.mousePressed(generateWordProblem);
+            backToMainButton.mousePressed(showMainPage);
+            nennerInput.input(aktualisiereDurchInteraktion);
+            zaehlerInput.input(aktualisiereDurchInteraktion);
+
+            tasksButton.mousePressed(showTaskTypesPage);
+            backFromTaskTypesButton.mousePressed(showMainPage);
+            
+            selectAll('.task-button').forEach(button => {
+                button.mousePressed(() => {
+                    const taskType = button.attribute('data-task-type');
+                    generateSpecificTask(taskType);
+                });
+            });
+
+            selectAll('.help-button').forEach(button => {
+                button.mousePressed(() => {
+                    const taskType = button.attribute('data-task-type');
+                    showHelp(taskType);
+                });
+            });
+            
+            select('#closeHelpModal').mousePressed(closeHelpModal);
+
+
+            schokoSketch = new p5(p => {
+                p.setup = function() {
+                    let canvas = p.createCanvas(SCHOKO_BREITE + 2 * RAND_ABSTAND, SCHOKO_HOEHE + 2 * RAND_ABSTAND + CANVAS_HOEHE_EXTRA);
+                    canvas.parent('canvasContainer');
+                    p.noLoop();
+                    aktualisiereUiZustand(); 
+                };
+                p.draw = mainDrawFunction;
+            });
+        }
+        
+        function loadScore() {
+            const savedScore = localStorage.getItem('score');
+            const savedLevel = localStorage.getItem('level');
+            score = savedScore ? parseInt(savedScore) : 0;
+            level = savedLevel ? parseInt(savedLevel) : 1;
+        }
+
+        function saveScore() {
+            localStorage.setItem('score', score);
+            localStorage.setItem('level', level);
+        }
+
+        function updateScoreDisplay() {
+            select('#scoreValue').html(score);
+            select('#levelValue').html(level);
+        }
+
+        function showLevelUpMessage(newLevel) {
+            const messageDiv = select('#levelUpMessage');
+            messageDiv.html(`Level Up! ${LEVEL_COMMENTS[newLevel] || "Wow!"}`);
+            messageDiv.removeClass('hidden');
+            setTimeout(() => {
+                messageDiv.addClass('hidden');
+            }, 3000);
+        }
+
+        // --- Core Application Logic ---
+
+        function naechsterSchritt() {
+            if (animationsSchritt < animationsSequenz.length - 1) {
+                animationsSchritt++;
+            } else {
+                animationsSchritt = animationsSequenz.length; 
+            }
+            aktualisiereUiZustand();
+        }
+
+        function vorherigerSchritt() {
+            if (animationsSchritt > 0) {
+                animationsSchritt--;
+            }
+            aktualisiereUiZustand();
+        }
+        
+        function showMainPage() {
+            problemPage.addClass('hidden');
+            taskTypesPage.addClass('hidden');
+            mainPage.removeClass('hidden');
+            if (problemSketch) {
+                problemSketch.remove();
+                problemSketch = null;
+            }
+        }
+
+        function showTaskTypesPage() {
+            mainPage.addClass('hidden');
+            problemPage.addClass('hidden');
+            taskTypesPage.removeClass('hidden');
+            if (problemSketch) {
+                problemSketch.remove();
+                problemSketch = null;
+            }
+        }
+        
+        function closeHelpModal() {
+            select('#helpModal').addClass('hidden');
+        }
+
+        function aktualisiereUiZustand() {
+            if (animationsSchritt < animationsSequenz.length) {
+                // Animation mode
+                mainPage.removeClass('hidden');
+                problemPage.addClass('hidden');
+                taskTypesPage.addClass('hidden');
+                interactiveControlsDiv.addClass('hidden');
+                nextButton.removeClass('hidden');
+                prevButton.removeClass('hidden');
+                const aktuellerSchritt = animationsSequenz[animationsSchritt];
+                explanationTextDiv.html(aktuellerSchritt.text);
+                if (aktuellerSchritt.n === 'N') { nenner = -1; zaehler = -1; } 
+                else { nenner = aktuellerSchritt.n; zaehler = aktuellerSchritt.z; }
+                prevButton.elt.disabled = (animationsSchritt === 0);
+                nextButton.html(animationsSchritt === animationsSequenz.length - 1 ? 'Selber machen!' : 'Weiter geht\'s!');
+            } else {
+                // Interactive mode
+                mainPage.removeClass('hidden');
+                problemPage.addClass('hidden');
+                taskTypesPage.addClass('hidden');
+                explanationTextDiv.html("Klasse! Jetzt bist du der Schoko-Meister! Probier selbst aus, wie viele Stücke du teilen und naschen kannst!");
+                nextButton.addClass('hidden'); 
+                prevButton.removeClass('hidden');
+                prevButton.elt.disabled = false;
+                interactiveControlsDiv.removeClass('hidden');
+                nenner = parseInt(nennerInput.value());
+                zaehler = parseInt(zaehlerInput.value());
+                if (isNaN(nenner) || nenner < 1) nenner = 4; 
+                if (isNaN(zaehler) || zaehler < 0 || zaehler > nenner) zaehler = 1; 
+                nennerInput.value(nenner);
+                zaehlerInput.value(zaehler);
+            }
+            if(schokoSketch) schokoSketch.redraw();
+        }
+        
+        function aktualisiereDurchInteraktion() {
+            if (animationsSchritt >= animationsSequenz.length) { 
+                nenner = parseInt(nennerInput.value());
+                zaehler = parseInt(zaehlerInput.value());
+                if (isNaN(nenner) || nenner < 1) nenner = 1; if (nenner > 12) nenner = 12; 
+                nennerInput.value(nenner);
+                if (isNaN(zaehler) || zaehler < 0) zaehler = 0; if (zaehler > nenner) zaehler = nenner; 
+                if (zaehler > 12) zaehler = 12; 
+                zaehlerInput.elt.max = nenner; 
+                zaehlerInput.value(zaehler); 
+                if(schokoSketch) schokoSketch.redraw();
+            }
+        }
+        
+        function updateScore(points) {
+            const newScore = score + points;
+            const newLevel = getLevelForScore(newScore);
+            const oldLevel = level;
+            score = newScore;
+            level = newLevel;
+
+            if (newLevel > oldLevel) {
+                 showLevelUpMessage(newLevel);
+            }
+
+            saveScore();
+            updateScoreDisplay();
+        }
+        
+        function getLevelForScore(currentScore) {
+            for (let i = 0; i < LEVEL_UP_THRESHOLDS.length; i++) {
+                if (currentScore < LEVEL_UP_THRESHOLDS[i]) {
+                    return i + 1;
+                }
+            }
+            return LEVEL_UP_THRESHOLDS.length + 1;
+        }
+
+        // --- Gemini API and Problem Page Logic ---
+        
+        async function generateWordProblem() {
+            answered = false;
+            mainPage.addClass('hidden');
+            problemPage.removeClass('hidden');
+            problemPageContent.html('<div id="problemAreaLoading"><div class="loader"></div><p>Denke mir eine coole Aufgabe aus...</p></div>');
+            
+            const currentNenner = nennerInput.value();
+            const currentZaehler = zaehlerInput.value();
+            const prompt = `Erstelle eine sehr einfache Textaufgabe für Grundschüler (ca. 8-10 Jahre alt) zum Thema Brüche. Sei kreativ beim Kontext und benutze abwechslungsreiche Beispiele wie Pizza, Kuchen, Schokolade, einen geteilten Weg, eine Kiste mit Murmeln oder einen Garten. Gib mir eine JSON-Antwort mit den folgenden Feldern: "problem_text" (die Textaufgabe), "context_object" (ein einzelnes Wort, das den Gegenstand der Aufgabe beschreibt, z.B. "pizza", "kuchen", "schokolade", "apfel"), "correct_answer" (der Bruch als String, z.B. "${currentZaehler}/${currentNenner}"), und "wrong_answers" (ein Array mit 3 falschen Brüchen als Strings). Die falschen Antworten sollten plausibel, aber falsch sein (z.B. Zähler und Nenner vertauscht, oder eine falsche Zahl).`;
+
+            try {
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "problem_text": { "type": "STRING" },
+                                "context_object": { "type": "STRING" },
+                                "correct_answer": { "type": "STRING" },
+                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
+                            },
+                            required: ["problem_text", "context_object", "correct_answer", "wrong_answers"]
+                        }
+                    }
+                };
+                
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API-Fehler: ${response.statusText}`);
+
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+                    const jsonText = result.candidates[0].content.parts[0].text;
+                    const data = JSON.parse(jsonText);
+                    displayProblem(data);
+                } else { throw new Error("Keine gültige Antwort von der API erhalten."); }
+            } catch (error) {
+                console.error("Fehler bei der Gemini-Anfrage:", error);
+                problemPageContent.html("<p>Hoppla! Da ist etwas schiefgegangen. Bitte versuche es erneut.</p>");
+            }
+        }
+        
+        async function generateSpecificTask(taskType) {
+            answered = false;
+            currentTaskType = taskType;
+            taskTypesPage.addClass('hidden');
+            problemPage.removeClass('hidden');
+            problemPageContent.html('<div id="problemAreaLoading"><div class="loader"></div><p>Denke mir eine coole Aufgabe aus...</p></div>');
+
+            let prompt, apiUrl;
+            let payload = {
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+            
+            // Generate a random fraction for the prompt
+            const nennerRandom = Math.floor(Math.random() * 8) + 2; // 2-9
+            const zaehlerRandom = Math.floor(Math.random() * (nennerRandom - 1)) + 1; // 1 to nenner-1
+            
+            switch(taskType) {
+                case 'visualFraction':
+                    const visualNenner = Math.floor(Math.random() * 6) + 2; // 2-7
+                    const visualZaehler = Math.floor(Math.random() * visualNenner) + 1;
+                    prompt = `Generiere eine einfache Aufgabenstellung, die einen Bruch visuell darstellt. Die Aufgabe soll lauten: "Welcher Bruch wird durch die schraffierte Fläche dargestellt?". Die korrekte Antwort ist ${visualZaehler}/${visualNenner}. Generiere 3 plausible, aber falsche Antwortoptionen, die ebenfalls Brüche sind. Achte darauf, dass die falschen Antworten oft aus den gleichen Zahlen (Zähler und Nenner) bestehen, aber falsch angeordnet sind, zum Beispiel ${visualNenner}/${visualZaehler} oder ähnliches. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (als String "${visualZaehler}/${visualNenner}"), und "wrong_answers" (ein Array mit 3 falschen Brüchen als Strings).`;
+                     payload.generationConfig.responseSchema = {
+                        type: "OBJECT",
+                        properties: {
+                            "problem_text": { "type": "STRING" },
+                            "correct_answer": { "type": "STRING" },
+                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
+                        },
+                        required: ["problem_text", "correct_answer", "wrong_answers"]
+                    };
+                    break;
+                case 'fractionOfQuantity':
+                    const quantity = (Math.floor(Math.random() * 8) + 2) * 10;
+                    prompt = `Erstelle eine einfache Textaufgabe für Grundschüler zum Thema "Bruchteile von Mengen". Die korrekte Antwort ist eine ganze Zahl. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Textaufgabe), "correct_answer" (die korrekte ganze Zahl als String), und "wrong_answers" (ein Array mit 3 falschen Zahlen als Strings). Nutze dabei den Bruch ${zaehlerRandom}/${nennerRandom} und die Menge ${quantity}.`;
+                    payload.generationConfig.responseSchema = {
+                        type: "OBJECT",
+                        properties: {
+                            "problem_text": { "type": "STRING" },
+                            "correct_answer": { "type": "STRING" },
+                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
+                        },
+                        required: ["problem_text", "correct_answer", "wrong_answers"]
+                    };
+                    break;
+                case 'expandFraction':
+                    const expandFactor = Math.floor(Math.random() * 2) + 2; // 2-3
+                    prompt = `Erstelle eine einfache Aufgabe für Grundschüler zum Erweitern von Brüchen. Der Bruch ist ${zaehlerRandom}/${nennerRandom} und der Erweiterungsfaktor ist ${expandFactor}. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (als String "${zaehlerRandom * expandFactor}/${nennerRandom * expandFactor}"), und "wrong_answers" (ein Array mit 3 falschen Brucherweiterungen).`;
+                     payload.generationConfig.responseSchema = {
+                        type: "OBJECT",
+                        properties: {
+                            "problem_text": { "type": "STRING" },
+                            "correct_answer": { "type": "STRING" },
+                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
+                        },
+                        required: ["problem_text", "correct_answer", "wrong_answers"]
+                    };
+                    break;
+                case 'reduceFraction':
+                    const reduceFactor = Math.floor(Math.random() * 2) + 2; // 2-3
+                    const zaehlerFull = zaehlerRandom * reduceFactor;
+                    const nennerFull = nennerRandom * reduceFactor;
+                    prompt = `Erstelle eine einfache Aufgabe für Grundschüler zum Kürzen von Brüchen. Der Bruch ist ${zaehlerFull}/${nennerFull} und der Kürzungsfaktor ist ${reduceFactor}. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (als String "${zaehlerRandom}/${nennerRandom}"), und "wrong_answers" (ein Array mit 3 falschen Brüchen).`;
+                     payload.generationConfig.responseSchema = {
+                        type: "OBJECT",
+                        properties: {
+                            "problem_text": { "type": "STRING" },
+                            "correct_answer": { "type": "STRING" },
+                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
+                        },
+                        required: ["problem_text", "correct_answer", "wrong_answers"]
+                    };
+                    break;
+                case 'fractionToDecimal':
+                    const validNenner = [2, 4, 5, 10, 20, 25, 50]; // Simplified denominators
+                    const selectedNenner = validNenner[Math.floor(Math.random() * validNenner.length)];
+                    const selectedZaehler = Math.floor(Math.random() * (selectedNenner - 1)) + 1;
+                    prompt = `Erstelle eine einfache Aufgabe für Grundschüler zum Umwandeln von Brüchen in Dezimalzahlen. Der Bruch ist ${selectedZaehler}/${selectedNenner}. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (die korrekte Dezimalzahl als String), und "wrong_answers" (ein Array mit 3 falschen Dezimalzahlen als Strings).`;
+                    payload.generationConfig.responseSchema = {
+                        type: "OBJECT",
+                        properties: {
+                            "problem_text": { "type": "STRING" },
+                            "correct_answer": { "type": "STRING" },
+                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
+                        },
+                        required: ["problem_text", "correct_answer", "wrong_answers"]
+                    };
+                    break;
+                default:
+                    problemPageContent.html("<p>Hoppla! Diesen Aufgabentyp kenne ich noch nicht.</p>");
+                    return;
+            }
+
+            payload.contents = [{ role: "user", parts: [{ text: prompt }] }];
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API-Fehler: ${response.statusText}`);
+
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+                    const jsonText = result.candidates[0].content.parts[0].text;
+                    const data = JSON.parse(jsonText);
+                    displayProblem(data);
+                } else { throw new Error("Keine gültige Antwort von der API erhalten."); }
+            } catch (error) {
+                console.error("Fehler bei der Gemini-Anfrage:", error);
+                problemPageContent.html("<p>Hoppla! Da ist etwas schiefgegangen. Bitte versuche es erneut.</p>");
+            }
+        }
+        
+        // New function to render math expressions as HTML
+        function renderMathHtml(text) {
+            // Replace fraction placeholders {z/n} with HTML structure
+            let newText = text.replace(/{(\d+)\/(\d+)}/g, (match, z, n) => {
+                return `<span class="frac-container"><span class="numerator">${z}</span><span class="fraction-bar"></span><span class="denominator">${n}</span></span>`;
+            });
+            // Replace multiplication placeholders {a*b} with HTML
+            newText = newText.replace(/{(\d+)\*(\d+)}/g, (match, a, b) => {
+                return `${a} &middot; ${b}`;
+            });
+            // Replace division placeholders {a:b} with HTML
+            newText = newText.replace(/{(\d+):(\d+)}/g, (match, a, b) => {
+                return `${a} : ${b}`;
+            });
+            return newText;
+        }
+
+        async function showHelp(taskType) {
+            const helpModal = select('#helpModal');
+            const helpContent = select('#helpContent');
+            helpContent.html('<div id="problemAreaLoading"><div class="loader"></div><p>Lade Hilfe...</p></div>');
+            helpModal.removeClass('hidden');
+
+            let helpText;
+            
+            switch(taskType) {
+                case 'visualFraction':
+                    helpText = `
+### So liest du Brüche ab
+
+Um einen Bruch aus einem Bild abzulesen, musst du zwei Dinge zählen:
+
+* **Den Nenner (die Zahl unten):** Zähle alle Teile, in die das Ganze aufgeteilt ist. Jedes Teil muss gleich groß sein.
+* **Den Zähler (die Zahl oben):** Zähle, wie viele dieser Teile eingefärbt oder hervorgehoben sind.
+
+**Beispiel:**
+Stell dir vor, du hast eine Pizza, die in 8 Stücke geteilt ist. Das ist dein **Nenner** ({8/8}).
+Du hast 3 Stücke davon gegessen. Das ist dein **Zähler** ({3/3}).
+Der Bruch ist dann {3/8}.
+`;
+                    break;
+                case 'fractionOfQuantity':
+                    helpText = `
+### So berechnest du Bruchteile von Mengen
+
+Wenn du einen Bruchteil einer Menge berechnen willst, gibt es einen einfachen Trick:
+
+1.  **Teilen durch den Nenner:** Nimm die Menge und teile sie durch die Zahl unten (den Nenner).
+2.  **Malnehmen mit dem Zähler:** Nimm das Ergebnis und multipliziere es mit der Zahl oben (dem Zähler).
+
+**Beispiel:**
+Du hast 20 Kirschen und willst {1/4} davon essen.
+1.  Teile die 20 Kirschen durch den Nenner 4: {20:4} = 5.
+2.  Multipliziere das Ergebnis mit dem Zähler 1: {5*1} = 5.
+{1/4} von 20 Kirschen sind also 5 Kirschen.
+`;
+                    break;
+                case 'expandFraction':
+                    helpText = `
+### So erweiterst du Brüche
+
+Brüche erweitern bedeutet, dass du Zähler und Nenner mit derselben Zahl multiplizierst. Dadurch verändern sich die Zahlen, aber der Wert des Bruches bleibt gleich.
+
+**Warum macht man das?**
+Stell dir vor, du hast die Hälfte einer Schokolade ({1/2}). Das ist genau so viel wie {2/4} der Schokolade, oder {3/6}. Die Stücke sind kleiner geworden, aber die Menge ist dieselbe.
+
+**Beispiel:**
+Erweitere den Bruch {1/2} mit der Zahl 3.
+* Zähler: {1*3} = 3
+* Nenner: {2*3} = 6
+Das Ergebnis ist {3/6}. Also ist {1/2} = {3/6}.
+`;
+                    break;
+                case 'reduceFraction':
+                    helpText = `
+### So kürzt du Brüche
+
+Brüche kürzen ist das Gegenteil von Erweitern. Du teilst Zähler und Nenner durch dieselbe Zahl, um den Bruch zu vereinfachen.
+
+**Warum macht man das?**
+Ein gekürzter Bruch ist leichter zu verstehen. {2/4} ist dasselbe wie {1/2}.
+Beim Kürzen suchst du die größte Zahl, durch die du Zähler und Nenner teilen kannst. Das ist der **größte gemeinsame Teiler**.
+
+**Beispiel:**
+Kürze den Bruch {6/9}.
+* Welche Zahl teilt 6 und 9? Die 3.
+* Zähler: {6:3} = 2
+* Nenner: {9:3} = 3
+Das Ergebnis ist {2/3}. Also ist {6/9} = {2/3}.
+`;
+                    break;
+                case 'fractionToDecimal':
+                    helpText = `
+### So wandelst du Brüche in Dezimalzahlen um
+
+Das ist ganz einfach! Du musst nur eine Sache tun:
+
+**Teile den Zähler durch den Nenner.**
+
+Das war's. Du nimmst die Zahl oben und teilst sie durch die Zahl unten. Das Ergebnis ist eine Kommazahl, also eine Dezimalzahl.
+
+**Beispiel:**
+Wandle den Bruch {1/4} in eine Dezimalzahl um.
+* Zähler ist 1.
+* Nenner ist 4.
+* Rechnung: {1:4} = 0.25.
+Das Ergebnis ist 0.25.
+`;
+                    break;
+            }
+
+            // A new method to parse markdown and render math expressions
+            helpContent.html(parseMarkdownWithMath(helpText));
+        }
+
+        // --- New parsing function ---
+        function parseMarkdownWithMath(text) {
+            // First, process math placeholders
+            let htmlText = renderMathHtml(text);
+
+            // Then, handle markdown
+            const lines = htmlText.split('\n');
+            let formattedHtml = '';
+            let inList = false;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                
+                if (trimmedLine.startsWith('### ')) {
+                    if (inList) {
+                        formattedHtml += '</ul>';
+                        inList = false;
+                    }
+                    formattedHtml += '<h3>' + trimmedLine.substring(4) + '</h3>';
+                }
+                else if (trimmedLine.includes('**')) {
+                    if (inList) {
+                        formattedHtml += '</ul>';
+                        inList = false;
+                    }
+                    let boldedLine = trimmedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    formattedHtml += '<p>' + boldedLine + '</p>';
+                }
+                else if (trimmedLine.startsWith('* ')) {
+                    if (!inList) {
+                        formattedHtml += '<ul>';
+                        inList = true;
+                    }
+                    formattedHtml += '<li>' + trimmedLine.substring(2) + '</li>';
+                }
+                else if (trimmedLine !== '') {
+                    if (inList) {
+                        formattedHtml += '</ul>';
+                        inList = false;
+                    }
+                    formattedHtml += '<p>' + trimmedLine + '</p>';
+                }
+            }
+            if (inList) {
+                formattedHtml += '</ul>';
+            }
+            return formattedHtml;
+        }
+
+        
+        function displayProblem(data) {
+            problemPageContent.html(`
+                <div id="problemCanvasContainer"></div>
+                <div id="problemText">${data.problem_text}</div>
+                <div id="answerOptions"></div>
+                <div id="feedbackArea"></div>
+                <div class="navigation-buttons">
+                    <button id="nextProblemButton" class="hidden">Nächste Aufgabe ✨</button>
+                </div>
+            `);
+
+            let answers = [data.correct_answer, ...data.wrong_answers];
+            answers.sort(() => Math.random() - 0.5); 
+
+            const answerOptionsDiv = select('#answerOptions');
+            answers.forEach(answer => {
+                let btn = createButton(answer, 'answer-btn');
+                btn.parent(answerOptionsDiv);
+                btn.mousePressed(() => checkAnswer(answer, data.correct_answer));
+            });
+            
+            const nextProblemButton = select('#nextProblemButton');
+            nextProblemButton.mousePressed(() => generateSpecificTask(currentTaskType));
+            
+            if (problemSketch) {
+                problemSketch.remove();
+                problemSketch = null;
+            }
+
+            if (currentTaskType === 'visualFraction') {
+                const [z, n] = data.correct_answer.split('/').map(Number);
+                const visualType = ['pizza', 'grid'][Math.floor(Math.random() * 2)];
+                 problemSketch = new p5(p => {
+                    p.setup = function() {
+                        let canvas = p.createCanvas(300, 220);
+                        canvas.parent('problemCanvasContainer');
+                    };
+                    p.draw = function() {
+                        p.background(247, 250, 255);
+                        if (visualType === 'pizza') {
+                            drawPizza(p, p.width / 2, p.height / 2, 80, n, z);
+                        } else { 
+                            drawGrid(p, (p.width - 200)/2, (p.height - 100)/2, 200, 100, n, z);
+                        }
+                    };
+                });
+                select('#problemCanvasContainer').removeClass('hidden');
+            } else {
+                 select('#problemCanvasContainer').addClass('hidden');
+            }
+        }
+        
+        function checkAnswer(selected, correct) {
+            if (answered) return;
+            answered = true;
+
+            const feedbackArea = select('#feedbackArea');
+            const answerButtons = selectAll('.answer-btn');
+            
+            if (selected === correct) {
+                feedbackArea.html("🎉 Richtig! Super gemacht! 🎉");
+                feedbackArea.addClass('correct').removeClass('incorrect');
+                updateScore(1);
+            } else {
+                feedbackArea.html("🤔 Fast! Versuch es nochmal!");
+                feedbackArea.addClass('incorrect').removeClass('correct');
+            }
+
+            answerButtons.forEach(btn => {
+                btn.attribute('disabled', ''); 
+                if (btn.html() === correct) {
+                     btn.addClass('correct-outline');
+                }
+            });
+
+            const nextProblemButton = select('#nextProblemButton');
+            if (nextProblemButton) {
+                nextProblemButton.removeClass('hidden');
+            }
+        }
+        
+        // --- Drawing Functions (reusable for both sketches) ---
+
+        function mainDrawFunction(pInstance) {
+            const p = pInstance || this; 
+            p.background(255); 
+            const aktuellerSchrittDetails = (animationsSchritt < animationsSequenz.length) ? animationsSequenz[animationsSchritt] : null;
+            let nZeichnen = (animationsSchritt < animationsSequenz.length && nenner === -1) ? 2 : nenner; 
+            let zZeichnen = (animationsSchritt < animationsSequenz.length && zaehler === -1) ? 0 : zaehler; 
+            if (animationsSchritt >= animationsSequenz.length) { 
+                nZeichnen = nenner;
+                zZeichnen = zaehler;
+            }
+            zeichneSchokolade(p, RAND_ABSTAND, RAND_ABSTAND, SCHOKO_BREITE, SCHOKO_HOEHE, nZeichnen, zZeichnen, aktuellerSchrittDetails);
+            let bruchCenterX = p.width / 2;
+            let bruchCenterY = RAND_ABSTAND + SCHOKO_HOEHE + 40; 
+            if (animationsSchritt >= animationsSequenz.length || (aktuellerSchrittDetails && aktuellerSchrittDetails.showBruchSymbol !== false) ) {
+                let zDisplay = zZeichnen;
+                let nDisplay = nZeichnen;
+                let istPlatzhalter = false;
+                if (animationsSchritt < animationsSequenz.length && nenner === -1 && zaehler === -1) { 
+                    zDisplay = "Oben";
+                    nDisplay = "Unten";
+                    istPlatzhalter = true;
+                } else if (animationsSchritt < animationsSequenz.length && aktuellerSchrittDetails.showOnlyNennerRelevant) {
+                    zDisplay = ""; 
+                }
+                zeichneBruchHorizontal(p, zDisplay, nDisplay, bruchCenterX, bruchCenterY, istPlatzhalter, (animationsSchritt < animationsSequenz.length && aktuellerSchrittDetails.showOnlyNennerRelevant));
+            }
+        }
+
+        function zeichneBruchHorizontal(p, z, n, x, y, istPlatzhalter = false, nurNennerRelevant = false) {
+            p.textAlign(p.CENTER, p.CENTER);
+            p.textSize(BRUCH_TEXT_GROESSE);
+            let zText = istPlatzhalter ? "Oben" : (nurNennerRelevant && z === "" ? "" : p.str(z));
+            let nText = istPlatzhalter ? "Unten" : p.str(n);
+            let zTextBreite = p.textWidth(zText);
+            let nTextBreite = p.textWidth(nText);
+            let maxTextBreite = p.max(zTextBreite, nTextBreite);
+            if (zText === "") maxTextBreite = nTextBreite; 
+            let strichLaenge = maxTextBreite + 15; 
+            if (zText !== "") { 
+                p.fill(nurNennerRelevant && !istPlatzhalter ? 180 : ZAEHLER_FARBE);
+                p.text(zText, x, y - BRUCH_TEXT_GROESSE * 0.3); 
+            }
+            p.stroke(BRUCHSTRICH_FARBE);
+            p.strokeWeight(3);
+            p.line(x - strichLaenge / 2, y + BRUCH_TEXT_GROESSE * 0.1, x + strichLaenge / 2, y + BRUCH_TEXT_GROESSE * 0.1); 
+            p.noStroke();
+            p.fill(NENNER_FARBE);
+            p.text(nText, x, y + BRUCH_TEXT_GROESSE * 0.7); 
+        }
+
+        function zeichneSchokolade(p, x, y, breite, hoehe, aktuelleGesamtTeile, aktuelleGenommeneTeile, details) {
+            p.fill(SCHOKO_FARBE_GANZ);
+            p.noStroke();
+            p.rect(x, y, breite, hoehe, 8);
+            let numGesamtTeile = (aktuelleGesamtTeile === -1 ) ? 2 : aktuelleGesamtTeile; 
+            let numGenommeneTeile = (aktuelleGenommeneTeile === -1) ? 0 : aktuelleGenommeneTeile;
+            if (numGesamtTeile <= 0) return;
+            let stueckBreite = breite / numGesamtTeile;
+            if (!(details && details.showOnlyNennerRelevant && numGenommeneTeile === 0)) {
+                p.fill(SCHOKO_FARBE_GENOMMEN);
+                p.noStroke();
+                for (let i = 0; i < numGenommeneTeile; i++) {
+                    let aktuellesX = x + i * stueckBreite;
+                    let ecken = [0,0,0,0];
+                    if (i === 0) { ecken[0] = 8; ecken[3] = 8; }
+                    if (i === numGenommeneTeile - 1) { ecken[1] = 8; ecken[2] = 8; }
+                    if (numGenommeneTeile === numGesamtTeile) { 
+                         if (i === 0) { ecken[0] = 8; ecken[3] = 8; }
+                         if (i === numGesamtTeile - 1) { ecken[1] = 8; ecken[2] = 8; }
+                    } else if (numGenommeneTeile === 1 && numGesamtTeile === 1) {
+                        ecken = [8,8,8,8];
+                    }
+                    p.rect(aktuellesX, y, stueckBreite, hoehe, ecken[0], ecken[1], ecken[2], ecken[3]);
+                }
+            }
+            if (details) { 
+                p.strokeWeight(4); 
+                if (details.nennerFokus) { p.stroke(FOKUS_UMRANDUNG_NENNER); p.noFill(); p.rect(x,y,breite,hoehe,8); }
+                if (details.zaehlerFokus && numGenommeneTeile > 0 && !(details.showOnlyNennerRelevant)) { p.stroke(FOKUS_UMRANDUNG_ZAEHLER); p.noFill(); p.rect(x, y, stueckBreite * numGenommeneTeile, hoehe, 8); }
+                p.noStroke(); 
+            }
+            p.stroke(LINIE_FARBE);
+            p.strokeWeight(3); 
+            for (let i = 1; i < numGesamtTeile; i++) {
+                let linieX = x + i * stueckBreite;
+                p.line(linieX, y, linieX, y + hoehe);
+            }
+            p.noStroke();
+        }
+
+        function drawPizza(p, x, y, radius, totalSlices, takenSlices) {
+            p.push();
+            p.translate(x, y);
+            p.fill(242, 213, 168); 
+            p.stroke(219, 178, 124);
+            p.strokeWeight(4);
+            p.ellipse(0, 0, radius * 2.2, radius * 2.2);
+            p.fill(224, 78, 62); 
+            p.noStroke();
+            p.ellipse(0, 0, radius * 2, radius * 2);
+            let angle = p.TWO_PI / totalSlices;
+            p.fill(135, 206, 250);
+            for (let i = 0; i < takenSlices; i++) {
+                p.arc(0, 0, radius * 2, radius * 2, i * angle, (i + 1) * angle, p.PIE);
+            }
+            p.stroke(242, 213, 168, 150); 
+            p.strokeWeight(2);
+            for (let i = 0; i < totalSlices; i++) {
+                p.line(0, 0, radius * p.cos(i * angle), radius * p.sin(i * angle));
+            }
+            p.pop();
+        }
+        
+        function drawGrid(p, x, y, width, height, totalParts, shadedParts) {
+            p.push();
+            p.translate(x, y);
+            p.fill(240, 240, 240);
+            p.noStroke();
+            p.rect(0, 0, width, height, 8);
+        
+            let partWidth = width / totalParts;
+            
+            p.fill(135, 206, 250);
+            p.noStroke();
+            for (let i = 0; i < shadedParts; i++) {
+                p.rect(i * partWidth, 0, partWidth, height);
+            }
+            
+            p.stroke(0, 0, 0);
+            p.strokeWeight(2);
+            for (let i = 1; i < totalParts; i++) {
+                p.line(i * partWidth, 0, i * partWidth, height);
+            }
+            p.noStroke();
+            p.pop();
+        }
+    </script>
+</body>
+</html>
+
