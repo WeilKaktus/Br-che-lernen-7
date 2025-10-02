@@ -193,6 +193,17 @@
         #nextProblemButton:active {
              box-shadow: 0px 2px 0px #1A522E;
         }
+        #submitMarkingButton {
+             background-image: linear-gradient(to bottom, #50C878, #2E8B57);
+             border-color: #2E8B57;
+             box-shadow: 0px 4px 0px #1A522E;
+        }
+        #submitMarkingButton:hover {
+             box-shadow: 0px 6px 0px #1A522E;
+        }
+        #submitMarkingButton:active {
+             box-shadow: 0px 2px 0px #1A522E;
+        }
         #answerOptions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -405,6 +416,11 @@
                 Wähle eine Kategorie, um dein Bruch-Wissen zu testen.
             </div>
             <div id="taskOptions" class="controls">
+                <!-- NEUE AUFGABE HINZUGEFÜGT -->
+                <div class="task-button-container">
+                    <button class="task-button" data-task-type="markFraction">Brüche markieren</button>
+                    <button class="help-button" data-task-type="visualFraction">?</button>
+                </div>
                 <div class="task-button-container">
                     <button class="task-button" data-task-type="visualFraction">Brüche darstellen</button>
                     <button class="help-button" data-task-type="visualFraction">?</button>
@@ -459,6 +475,17 @@
         let score = 0;
         let level = 1;
         let answered = false;
+        
+        // NEUER ZUSTAND FÜR INTERAKTIVE AUFGABEN
+        let interactiveTaskState = {
+            correct_numerator: 0,
+            total_denominator: 0,
+            markedParts: [], // Speichert den Zustand der markierten Teile (true/false)
+            canvasWidth: 300,
+            canvasHeight: 220,
+            gridWidth: 200,
+            gridHeight: 100
+        };
         
         // ** API Key wurde entfernt, da die App ohne KI arbeiten soll **
 
@@ -523,7 +550,6 @@
 
             nextButton.mousePressed(naechsterSchritt);
             prevButton.mousePressed(vorherigerSchritt); 
-            // geminiButton leitet jetzt zur Aufgabenseite weiter
             geminiButton.mousePressed(showTaskTypesPage); 
             backToMainButton.mousePressed(showMainPage);
             nennerInput.input(aktualisiereDurchInteraktion);
@@ -535,7 +561,7 @@
             selectAll('.task-button').forEach(button => {
                 button.mousePressed(() => {
                     const taskType = button.attribute('data-task-type');
-                    generateSpecificTaskLocal(taskType); // NEUE LOKALE FUNKTION
+                    generateSpecificTaskLocal(taskType); 
                 });
             });
 
@@ -648,6 +674,16 @@
             let z, n, factor, quantity;
             
             switch(taskType) {
+                case 'markFraction':
+                    n = getRandomInt(3, 8); // Nenner 3-8
+                    z = getRandomInt(1, n - 1); // Zähler 1 bis N-1
+                    problemData.problem_text = `Markiere die Schokostücke, um den Bruch {${z}/${n}} darzustellen. Klicke auf die Stücke, die du nehmen würdest.`;
+                    problemData.correct_answer = `${z}/${n}`; // Für Anzeige/Debugging
+                    problemData.correct_numerator = z; 
+                    problemData.total_denominator = n; 
+                    problemData.wrong_answers = []; // Nicht benötigt, aber zur Vollständigkeit
+                    break;
+
                 case 'visualFraction':
                     n = getRandomInt(2, 7); // Nenner 2-7
                     z = getRandomInt(1, n); // Zähler 1-Nenner
@@ -879,18 +915,16 @@
             
             switch(taskType) {
                 case 'visualFraction':
+                case 'markFraction':
                     helpText = `
-### So liest du Brüche ab
+### Brüche ablesen/markieren
 
-Um einen Bruch aus einem Bild abzulesen, musst du zwei Dinge zählen:
+Um einen Bruch abzubilden oder zu verstehen, musst du diese Schritte gehen:
 
-* **Den Nenner (die Zahl unten):** Zähle alle Teile, in die das Ganze aufgeteilt ist. Jedes Teil muss gleich groß sein.
-* **Den Zähler (die Zahl oben):** Zähle, wie viele dieser Teile eingefärbt oder hervorgehoben sind.
+1.  **Schritt: Der Nenner (Unten):** Zähle alle Teile, in die das Ganze (z.B. deine Schokotafel) aufgeteilt ist. *Das ist dein Nenner.*
+2.  **Schritt: Der Zähler (Oben):** Zähle oder markiere, wie viele dieser Teile eingefärbt oder hervorgehoben sind. *Das ist dein Zähler.*
 
-**Beispiel:**
-Stell dir vor, du hast eine Pizza, die in 8 Stücke geteilt ist. Das ist dein **Nenner** ({8/8}).
-Du hast 3 Stücke davon gegessen. Das ist dein **Zähler** ({3/3}).
-Der Bruch ist dann {3/8}.
+**Beispiel:** Bei {3/4} musst du die Tafel zuerst in 4 Teile teilen und dann 3 Teile davon markieren.
 `;
                     break;
                 case 'fractionOfQuantity':
@@ -1017,59 +1051,188 @@ Das Ergebnis ist 0.25.
         }
 
         
-        function displayProblem(data) {
-            problemPageContent.html(`
-                <div id="problemCanvasContainer"></div>
-                <div id="problemText">${data.problem_text}</div>
-                <div id="answerOptions"></div>
-                <div id="feedbackArea"></div>
-                <div class="navigation-buttons">
-                    <button id="nextProblemButton" class="hidden">Nächste Aufgabe ✨</button>
-                </div>
-            `);
-
-            let answers = [data.correct_answer, ...data.wrong_answers];
-            answers.sort(() => Math.random() - 0.5); 
-
-            const answerOptionsDiv = select('#answerOptions');
-            answers.forEach(answer => {
-                // Hier wird der Antworttext auch mit renderMathHtml verarbeitet, falls es ein Bruch ist
-                let btn = createButton(renderMathHtml(answer), 'answer-btn'); 
-                // Speichere den ursprünglichen String-Wert als Attribut für die Überprüfung
-                btn.attribute('data-value', answer); 
-                btn.parent(answerOptionsDiv);
-                btn.mousePressed(() => checkAnswer(answer, data.correct_answer));
-            });
+        // --- INTERACTIVE MARKING FUNCTIONS (NEU) ---
+        
+        function handleMarkingClick(p, canvas, totalParts) {
+            if (answered) return;
             
-            const nextProblemButton = select('#nextProblemButton');
-            // NEU: Aufruf der lokalen Generierungsfunktion beim Klick
-            nextProblemButton.mousePressed(() => generateSpecificTaskLocal(currentTaskType)); 
+            // Definiere den Begrenzungsrahmen des Gitters (muss zur Zeichnung passen)
+            const x = (p.width - interactiveTaskState.gridWidth) / 2;
+            const y = (p.height - interactiveTaskState.gridHeight) / 2;
+            const width = interactiveTaskState.gridWidth;
+            const height = interactiveTaskState.gridHeight;
             
-            if (problemSketch) {
-                problemSketch.remove();
-                problemSketch = null;
+            if (p.mouseX > x && p.mouseX < x + width && p.mouseY > y && p.mouseY < y + height) {
+                const partWidth = width / totalParts;
+                
+                // Berechne, welcher Teil angeklickt wurde
+                const relativeX = p.mouseX - x;
+                const clickedIndex = Math.floor(relativeX / partWidth);
+                
+                // Schalte den Zustand um (true/false)
+                if (clickedIndex >= 0 && clickedIndex < totalParts) {
+                    interactiveTaskState.markedParts[clickedIndex] = !interactiveTaskState.markedParts[clickedIndex];
+                    p.redraw(); 
+                }
             }
+        }
+        
+        function drawInteractiveGrid(p, x, y, width, height, totalParts, markedParts) {
+            p.push();
+            p.translate(x, y);
+            p.fill(240, 240, 240);
+            p.stroke(0, 0, 0);
+            p.strokeWeight(2);
+            p.rect(0, 0, width, height, 8); 
+            
+            let partWidth = width / totalParts;
+            
+            p.noStroke();
+            // Zeichne markierte (schattierte) Teile in Schoko-Farbe
+            for (let i = 0; i < totalParts; i++) {
+                if (markedParts[i]) {
+                    p.fill(SCHOKO_FARBE_GENOMMEN); 
+                    p.rect(i * partWidth, 0, partWidth, height);
+                }
+            }
+            
+            // Zeichne Gitternetzlinien oben
+            p.stroke(LINIE_FARBE); // Weiße Linien wie bei der Schokotafel
+            p.strokeWeight(3);
+            for (let i = 1; i < totalParts; i++) {
+                p.line(i * partWidth, 0, i * partWidth, height);
+            }
+            p.noStroke();
+            p.pop();
+        }
+        
+        function checkMarkingAnswer(correctNumerator) {
+            if (answered) return;
+            
+            const markedCount = interactiveTaskState.markedParts.filter(m => m).length;
+            
+            const feedbackArea = select('#feedbackArea');
+            const submitButton = select('#submitMarkingButton');
+            const nextProblemButton = select('#nextProblemButton');
+            
+            answered = true; // Blockiere weitere Interaktion und das Senden
+            submitButton.attribute('disabled', '');
+            
+            // Zeige Feedback an
+            if (markedCount === correctNumerator) {
+                feedbackArea.html("🎉 Richtig! Super gemacht! 🎉");
+                feedbackArea.addClass('correct').removeClass('incorrect');
+                updateScore(1);
+            } else {
+                feedbackArea.html(`🤔 Fast! Du hast ${markedCount} von ${interactiveTaskState.total_denominator} markiert, aber es sollten ${correctNumerator} sein.`);
+                feedbackArea.addClass('incorrect').removeClass('correct');
+                
+                // Zeige die korrekte Lösung visuell an (markiere die ersten Z Teile)
+                interactiveTaskState.markedParts = new Array(interactiveTaskState.total_denominator).fill(false);
+                for(let i = 0; i < correctNumerator; i++) {
+                    interactiveTaskState.markedParts[i] = true;
+                }
+                if (problemSketch) problemSketch.redraw();
+            }
+             nextProblemButton.removeClass('hidden');
+        }
 
-            if (currentTaskType === 'visualFraction') {
-                const [z, n] = data.correct_answer.split('/').map(Number);
-                const visualType = ['pizza', 'grid'][Math.floor(Math.random() * 2)];
-                 problemSketch = new p5(p => {
+        // --- DISPLAY LOGIK (MODIFIZIERT) ---
+
+        function displayProblem(data) {
+            
+            if (currentTaskType === 'markFraction') {
+                // MARKIERUNGS-AUFGABE (Interaktiv)
+                problemPageContent.html(`
+                    <div id="problemCanvasContainer"></div>
+                    <div id="problemText">${data.problem_text}</div>
+                    <div id="feedbackArea"></div>
+                    <div class="navigation-buttons">
+                        <button id="submitMarkingButton">Antwort prüfen! ✅</button>
+                        <button id="nextProblemButton" class="hidden">Nächste Aufgabe ✨</button>
+                    </div>
+                `);
+
+                // Initialisiere den Zustand
+                const n = data.total_denominator;
+                const z = data.correct_numerator;
+                interactiveTaskState.correct_numerator = z;
+                interactiveTaskState.total_denominator = n;
+                interactiveTaskState.markedParts = new Array(n).fill(false);
+                
+                // Initialisiere den interaktiven p5 Sketch
+                problemSketch = new p5(p => {
                     p.setup = function() {
-                        let canvas = p.createCanvas(300, 220);
+                        let canvas = p.createCanvas(interactiveTaskState.canvasWidth, interactiveTaskState.canvasHeight);
                         canvas.parent('problemCanvasContainer');
+                        // Füge den Klick-Handler hinzu
+                        canvas.mousePressed(() => handleMarkingClick(p, canvas, n));
                     };
                     p.draw = function() {
                         p.background(247, 250, 255);
-                        if (visualType === 'pizza') {
-                            drawPizza(p, p.width / 2, p.height / 2, 80, n, z);
-                        } else { 
-                            drawGrid(p, (p.width - 200)/2, (p.height - 100)/2, 200, 100, n, z);
-                        }
+                        const x = (p.width - interactiveTaskState.gridWidth) / 2;
+                        const y = (p.height - interactiveTaskState.gridHeight) / 2;
+                        drawInteractiveGrid(p, x, y, interactiveTaskState.gridWidth, interactiveTaskState.gridHeight, n, interactiveTaskState.markedParts);
                     };
                 });
+
+                select('#submitMarkingButton').mousePressed(() => checkMarkingAnswer(z));
+                select('#nextProblemButton').mousePressed(() => generateSpecificTaskLocal(currentTaskType));
+                
                 select('#problemCanvasContainer').removeClass('hidden');
+
             } else {
-                 select('#problemCanvasContainer').addClass('hidden');
+                // MEHRFACH-AUSWAHL-AUFGABEN (Bestehende Logik)
+                problemPageContent.html(`
+                    <div id="problemCanvasContainer"></div>
+                    <div id="problemText">${data.problem_text}</div>
+                    <div id="answerOptions"></div>
+                    <div id="feedbackArea"></div>
+                    <div class="navigation-buttons">
+                        <button id="nextProblemButton" class="hidden">Nächste Aufgabe ✨</button>
+                    </div>
+                `);
+
+                let answers = [data.correct_answer, ...data.wrong_answers];
+                answers.sort(() => Math.random() - 0.5); 
+
+                const answerOptionsDiv = select('#answerOptions');
+                answers.forEach(answer => {
+                    let btn = createButton(renderMathHtml(answer), 'answer-btn'); 
+                    btn.attribute('data-value', answer); 
+                    btn.parent(answerOptionsDiv);
+                    btn.mousePressed(() => checkAnswer(answer, data.correct_answer));
+                });
+                
+                const nextProblemButton = select('#nextProblemButton');
+                nextProblemButton.mousePressed(() => generateSpecificTaskLocal(currentTaskType)); 
+                
+                if (problemSketch) {
+                    problemSketch.remove();
+                    problemSketch = null;
+                }
+
+                if (currentTaskType === 'visualFraction') {
+                    const [z, n] = data.correct_answer.split('/').map(Number);
+                    const visualType = ['pizza', 'grid'][Math.floor(Math.random() * 2)];
+                     problemSketch = new p5(p => {
+                        p.setup = function() {
+                            let canvas = p.createCanvas(300, 220);
+                            canvas.parent('problemCanvasContainer');
+                        };
+                        p.draw = function() {
+                            p.background(247, 250, 255);
+                            if (visualType === 'pizza') {
+                                drawPizza(p, p.width / 2, p.height / 2, 80, n, z);
+                            } else { 
+                                drawGrid(p, (p.width - 200)/2, (p.height - 100)/2, 200, 100, n, z);
+                            }
+                        };
+                    });
+                    select('#problemCanvasContainer').removeClass('hidden');
+                } else {
+                     select('#problemCanvasContainer').addClass('hidden');
+                }
             }
         }
         
@@ -1091,7 +1254,6 @@ Das Ergebnis ist 0.25.
 
             answerButtons.forEach(btn => {
                 btn.attribute('disabled', ''); 
-                // Überprüfe anhand des gespeicherten data-value Attributs
                 if (btn.attribute('data-value') === correct) { 
                      btn.addClass('correct-outline');
                 }
