@@ -391,10 +391,11 @@
                     <label for="zaehlerInput">So viele Stücke nehm' ich mir:</label>
                     <input type="number" id="zaehlerInput" value="1" min="0" max="12">
                 </div>
-                <button id="geminiButton">✨ Textaufgabe ausdenken</button>
+                <!-- Der Button wurde umfunktioniert, um direkt zur Aufgabenseite zu leiten, da die KI-Funktion entfernt wurde -->
+                <button id="geminiButton">Interaktive Aufgaben</button> 
             </div>
             <div class="navigation-buttons">
-                 <button id="tasksButton">Interaktive Aufgaben</button>
+                 <button id="tasksButton">Aufgaben-Training</button> 
             </div>
         </div>
 
@@ -458,7 +459,8 @@
         let score = 0;
         let level = 1;
         let answered = false;
-        const apiKey = "AIzaSyCgBVu2ApKLD6tz1TS8vYczb0KkX6vr4ro";
+        
+        // ** API Key wurde entfernt, da die App ohne KI arbeiten soll **
 
         const LEVEL_UP_THRESHOLDS = [5, 10, 20, 40, 70, 100]; // Punkte, um das nächste Level zu erreichen
         const LEVEL_COMMENTS = {
@@ -501,8 +503,8 @@
         const CANVAS_HOEHE_EXTRA = 70; 
         
         function setup() {
-            loadScore(); // Lade den gespeicherten Punktestand
-            updateScoreDisplay(); // Zeige ihn an
+            loadScore(); 
+            updateScoreDisplay(); 
 
             mainPage = select('#mainPage');
             problemPage = select('#problemPage');
@@ -521,7 +523,8 @@
 
             nextButton.mousePressed(naechsterSchritt);
             prevButton.mousePressed(vorherigerSchritt); 
-            geminiButton.mousePressed(generateWordProblem);
+            // geminiButton leitet jetzt zur Aufgabenseite weiter
+            geminiButton.mousePressed(showTaskTypesPage); 
             backToMainButton.mousePressed(showMainPage);
             nennerInput.input(aktualisiereDurchInteraktion);
             zaehlerInput.input(aktualisiereDurchInteraktion);
@@ -532,7 +535,7 @@
             selectAll('.task-button').forEach(button => {
                 button.mousePressed(() => {
                     const taskType = button.attribute('data-task-type');
-                    generateSpecificTask(taskType);
+                    generateSpecificTaskLocal(taskType); // NEUE LOKALE FUNKTION
                 });
             });
 
@@ -555,6 +558,155 @@
                 };
                 p.draw = mainDrawFunction;
             });
+        }
+        
+        // Hilfsfunktion: Zufällige Ganzzahl
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Hilfsfunktion: Größter gemeinsamer Teiler (GCD)
+        function gcd(a, b) {
+            return b ? gcd(b, a % b) : a;
+        }
+
+        // Hilfsfunktion: Plausible falsche Brüche
+        function generateWrongFractions(z, n, correct) {
+            let wrongs = new Set();
+            wrongs.add(`${n}/${z}`); // Zähler und Nenner vertauscht
+            wrongs.add(`${z + 1}/${n}`); // Zähler + 1
+            wrongs.add(`${z}/${n + 1}`); // Nenner + 1
+            
+            let tempArray = Array.from(wrongs).filter(w => w !== correct).slice(0, 3);
+            
+            // Fülle mit weiteren zufälligen Brüchen auf, falls nötig
+            while (tempArray.length < 3) {
+                let randomN = getRandomInt(2, 8);
+                let randomZ = getRandomInt(1, randomN);
+                let wrongFrac = `${randomZ}/${randomN}`;
+                if (wrongFrac !== correct && !tempArray.includes(wrongFrac)) {
+                    tempArray.push(wrongFrac);
+                }
+            }
+            return tempArray.slice(0, 3);
+        }
+
+        // Hilfsfunktion: Plausible falsche Zahlen
+        function generateWrongNumbers(correct) {
+            const correctNum = Number(correct);
+            let wrongs = new Set();
+            wrongs.add(String(correctNum + 1));
+            wrongs.add(String(correctNum - 1));
+            wrongs.add(String(correctNum * 2));
+            wrongs.add(String(correctNum / 2));
+            
+            let tempArray = Array.from(wrongs).filter(w => !isNaN(Number(w)) && w !== correct && Number(w) >= 0).slice(0, 3);
+            
+             while (tempArray.length < 3) {
+                let randomNum = getRandomInt(1, 30);
+                let wrongNum = String(randomNum);
+                if (wrongNum !== correct && !tempArray.includes(wrongNum)) {
+                    tempArray.push(wrongNum);
+                }
+            }
+            return tempArray.slice(0, 3);
+        }
+        
+        // Hilfsfunktion: Plausible falsche Dezimalzahlen
+        function generateWrongDecimals(correct) {
+            const correctNum = Number(correct);
+            let wrongs = new Set();
+            wrongs.add(String(correctNum + 0.1).substring(0, 5));
+            wrongs.add(String(correctNum - 0.1).substring(0, 5));
+            wrongs.add(String(1 - correctNum).substring(0, 5)); // Komplementärwert
+            
+            let tempArray = Array.from(wrongs).filter(w => !isNaN(Number(w)) && w !== correct && Number(w) >= 0).slice(0, 3);
+            
+             while (tempArray.length < 3) {
+                let randomDecimal = Math.round(Math.random() * 100) / 100; // 0.00 bis 1.00
+                let wrongDecimal = String(randomDecimal);
+                if (wrongDecimal !== correct && !tempArray.includes(wrongDecimal)) {
+                    tempArray.push(wrongDecimal);
+                }
+            }
+            return tempArray.slice(0, 3);
+        }
+
+        /**
+         * NEUE LOKALE FUNKTION ZUR AUFGABENGENERIERUNG
+         */
+        function generateSpecificTaskLocal(taskType) {
+            answered = false;
+            currentTaskType = taskType;
+            taskTypesPage.addClass('hidden');
+            problemPage.removeClass('hidden');
+            problemPageContent.html('<div id="problemAreaLoading"><div class="loader"></div><p>Denke mir eine coole Aufgabe aus...</p></div>');
+            
+            let problemData = {};
+            let z, n, factor, quantity;
+            
+            switch(taskType) {
+                case 'visualFraction':
+                    n = getRandomInt(2, 7); // Nenner 2-7
+                    z = getRandomInt(1, n); // Zähler 1-Nenner
+                    problemData.problem_text = "Welcher Bruch wird durch die blau schraffierte Fläche dargestellt?";
+                    problemData.correct_answer = `${z}/${n}`;
+                    problemData.wrong_answers = generateWrongFractions(z, n, problemData.correct_answer);
+                    break;
+
+                case 'fractionOfQuantity':
+                    n = getRandomInt(2, 5); // Nenner 2-5
+                    quantity = getRandomInt(2, 6) * n; // Menge, die durch N teilbar ist
+                    z = getRandomInt(1, n - 1); // Zähler 1-Nenner
+                    let result = (quantity / n) * z;
+                    
+                    const context_objects = ["Äpfeln", "Murmeln", "Stiften", "Gummibärchen"];
+                    const object = context_objects[getRandomInt(0, context_objects.length - 1)];
+                    
+                    problemData.problem_text = `Du hast ${quantity} ${object} gesammelt. Dein Freund nimmt {${z}/${n}} davon. Wie viele ${object} nimmt er sich?`;
+                    problemData.correct_answer = String(result);
+                    problemData.wrong_answers = generateWrongNumbers(problemData.correct_answer);
+                    break;
+
+                case 'expandFraction':
+                    n = getRandomInt(3, 7); // Nenner 3-7
+                    z = getRandomInt(1, n - 1); // Zähler 1-Nenner
+                    factor = getRandomInt(2, 3); // Erweiterungsfaktor 2 oder 3
+                    
+                    problemData.problem_text = `Erweitere den Bruch {${z}/${n}} mit der Zahl ${factor}. Wähle den neuen Bruch.`;
+                    problemData.correct_answer = `${z * factor}/${n * factor}`;
+                    problemData.wrong_answers = generateWrongFractions(z * factor, n * factor, problemData.correct_answer);
+                    break;
+
+                case 'reduceFraction':
+                    factor = getRandomInt(2, 3); // Kürzungsfaktor 2 oder 3
+                    let nSimple = getRandomInt(3, 7); 
+                    let zSimple = getRandomInt(1, nSimple - 1);
+                    n = nSimple * factor;
+                    z = zSimple * factor;
+
+                    problemData.problem_text = `Kürze den Bruch {${z}/${n}} vollständig. Wähle den gekürzten Bruch.`;
+                    problemData.correct_answer = `${zSimple}/${nSimple}`;
+                    problemData.wrong_answers = generateWrongFractions(zSimple, nSimple, problemData.correct_answer);
+                    break;
+
+                case 'fractionToDecimal':
+                    const validNenner = [2, 4, 5, 10]; // Einfache Nenner für Dezimalzahlen
+                    n = validNenner[getRandomInt(0, validNenner.length - 1)];
+                    z = getRandomInt(1, n - 1);
+                    
+                    let decimalResult = z / n;
+                    problemData.problem_text = `Wandle den Bruch {${z}/${n}} in eine Dezimalzahl (Kommazahl) um.`;
+                    problemData.correct_answer = String(decimalResult);
+                    problemData.wrong_answers = generateWrongDecimals(problemData.correct_answer);
+                    break;
+            }
+
+            // Sicherstellen, dass die problem_text mit Mathe-HTML gerendert wird, bevor sie angezeigt wird
+            problemData.problem_text = renderMathHtml(problemData.problem_text); 
+            displayProblem(problemData);
         }
         
         function loadScore() {
@@ -698,165 +850,7 @@
             return LEVEL_UP_THRESHOLDS.length + 1;
         }
 
-        // --- Gemini API and Problem Page Logic ---
-        
-        async function generateWordProblem() {
-            answered = false;
-            mainPage.addClass('hidden');
-            problemPage.removeClass('hidden');
-            problemPageContent.html('<div id="problemAreaLoading"><div class="loader"></div><p>Denke mir eine coole Aufgabe aus...</p></div>');
-            
-            const currentNenner = nennerInput.value();
-            const currentZaehler = zaehlerInput.value();
-            const prompt = `Erstelle eine sehr einfache Textaufgabe für Grundschüler (ca. 8-10 Jahre alt) zum Thema Brüche. Sei kreativ beim Kontext und benutze abwechslungsreiche Beispiele wie Pizza, Kuchen, Schokolade, einen geteilten Weg, eine Kiste mit Murmeln oder einen Garten. Gib mir eine JSON-Antwort mit den folgenden Feldern: "problem_text" (die Textaufgabe), "context_object" (ein einzelnes Wort, das den Gegenstand der Aufgabe beschreibt, z.B. "pizza", "kuchen", "schokolade", "apfel"), "correct_answer" (der Bruch als String, z.B. "${currentZaehler}/${currentNenner}"), und "wrong_answers" (ein Array mit 3 falschen Brüchen als Strings). Die falschen Antworten sollten plausibel, aber falsch sein (z.B. Zähler und Nenner vertauscht, oder eine falsche Zahl).`;
-
-            try {
-                const payload = {
-                    contents: [{ role: "user", parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                "problem_text": { "type": "STRING" },
-                                "context_object": { "type": "STRING" },
-                                "correct_answer": { "type": "STRING" },
-                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
-                            },
-                            required: ["problem_text", "context_object", "correct_answer", "wrong_answers"]
-                        }
-                    }
-                };
-                
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API-Fehler: ${response.statusText}`);
-
-                const result = await response.json();
-                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
-                    const jsonText = result.candidates[0].content.parts[0].text;
-                    const data = JSON.parse(jsonText);
-                    displayProblem(data);
-                } else { throw new Error("Keine gültige Antwort von der API erhalten."); }
-            } catch (error) {
-                console.error("Fehler bei der Gemini-Anfrage:", error);
-                problemPageContent.html("<p>Hoppla! Da ist etwas schiefgegangen. Bitte versuche es erneut.</p>");
-            }
-        }
-        
-        async function generateSpecificTask(taskType) {
-            answered = false;
-            currentTaskType = taskType;
-            taskTypesPage.addClass('hidden');
-            problemPage.removeClass('hidden');
-            problemPageContent.html('<div id="problemAreaLoading"><div class="loader"></div><p>Denke mir eine coole Aufgabe aus...</p></div>');
-
-            let prompt, apiUrl;
-            let payload = {
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
-            };
-            
-            // Generate a random fraction for the prompt
-            const nennerRandom = Math.floor(Math.random() * 8) + 2; // 2-9
-            const zaehlerRandom = Math.floor(Math.random() * (nennerRandom - 1)) + 1; // 1 to nenner-1
-            
-            switch(taskType) {
-                case 'visualFraction':
-                    const visualNenner = Math.floor(Math.random() * 6) + 2; // 2-7
-                    const visualZaehler = Math.floor(Math.random() * visualNenner) + 1;
-                    prompt = `Generiere eine einfache Aufgabenstellung, die einen Bruch visuell darstellt. Die Aufgabe soll lauten: "Welcher Bruch wird durch die schraffierte Fläche dargestellt?". Die korrekte Antwort ist ${visualZaehler}/${visualNenner}. Generiere 3 plausible, aber falsche Antwortoptionen, die ebenfalls Brüche sind. Achte darauf, dass die falschen Antworten oft aus den gleichen Zahlen (Zähler und Nenner) bestehen, aber falsch angeordnet sind, zum Beispiel ${visualNenner}/${visualZaehler} oder ähnliches. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (als String "${visualZaehler}/${visualNenner}"), und "wrong_answers" (ein Array mit 3 falschen Brüchen als Strings).`;
-                     payload.generationConfig.responseSchema = {
-                        type: "OBJECT",
-                        properties: {
-                            "problem_text": { "type": "STRING" },
-                            "correct_answer": { "type": "STRING" },
-                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
-                        },
-                        required: ["problem_text", "correct_answer", "wrong_answers"]
-                    };
-                    break;
-                case 'fractionOfQuantity':
-                    const quantity = (Math.floor(Math.random() * 8) + 2) * 10;
-                    prompt = `Erstelle eine einfache Textaufgabe für Grundschüler zum Thema "Bruchteile von Mengen". Die korrekte Antwort ist eine ganze Zahl. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Textaufgabe), "correct_answer" (die korrekte ganze Zahl als String), und "wrong_answers" (ein Array mit 3 falschen Zahlen als Strings). Nutze dabei den Bruch ${zaehlerRandom}/${nennerRandom} und die Menge ${quantity}.`;
-                    payload.generationConfig.responseSchema = {
-                        type: "OBJECT",
-                        properties: {
-                            "problem_text": { "type": "STRING" },
-                            "correct_answer": { "type": "STRING" },
-                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
-                        },
-                        required: ["problem_text", "correct_answer", "wrong_answers"]
-                    };
-                    break;
-                case 'expandFraction':
-                    const expandFactor = Math.floor(Math.random() * 2) + 2; // 2-3
-                    prompt = `Erstelle eine einfache Aufgabe für Grundschüler zum Erweitern von Brüchen. Der Bruch ist ${zaehlerRandom}/${nennerRandom} und der Erweiterungsfaktor ist ${expandFactor}. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (als String "${zaehlerRandom * expandFactor}/${nennerRandom * expandFactor}"), und "wrong_answers" (ein Array mit 3 falschen Brucherweiterungen).`;
-                     payload.generationConfig.responseSchema = {
-                        type: "OBJECT",
-                        properties: {
-                            "problem_text": { "type": "STRING" },
-                            "correct_answer": { "type": "STRING" },
-                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
-                        },
-                        required: ["problem_text", "correct_answer", "wrong_answers"]
-                    };
-                    break;
-                case 'reduceFraction':
-                    const reduceFactor = Math.floor(Math.random() * 2) + 2; // 2-3
-                    const zaehlerFull = zaehlerRandom * reduceFactor;
-                    const nennerFull = nennerRandom * reduceFactor;
-                    prompt = `Erstelle eine einfache Aufgabe für Grundschüler zum Kürzen von Brüchen. Der Bruch ist ${zaehlerFull}/${nennerFull} und der Kürzungsfaktor ist ${reduceFactor}. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (als String "${zaehlerRandom}/${nennerRandom}"), und "wrong_answers" (ein Array mit 3 falschen Brüchen).`;
-                     payload.generationConfig.responseSchema = {
-                        type: "OBJECT",
-                        properties: {
-                            "problem_text": { "type": "STRING" },
-                            "correct_answer": { "type": "STRING" },
-                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
-                        },
-                        required: ["problem_text", "correct_answer", "wrong_answers"]
-                    };
-                    break;
-                case 'fractionToDecimal':
-                    const validNenner = [2, 4, 5, 10, 20, 25, 50]; // Simplified denominators
-                    const selectedNenner = validNenner[Math.floor(Math.random() * validNenner.length)];
-                    const selectedZaehler = Math.floor(Math.random() * (selectedNenner - 1)) + 1;
-                    prompt = `Erstelle eine einfache Aufgabe für Grundschüler zum Umwandeln von Brüchen in Dezimalzahlen. Der Bruch ist ${selectedZaehler}/${selectedNenner}. Gib mir eine JSON-Antwort mit den Feldern "problem_text" (die Frage), "correct_answer" (die korrekte Dezimalzahl als String), und "wrong_answers" (ein Array mit 3 falschen Dezimalzahlen als Strings).`;
-                    payload.generationConfig.responseSchema = {
-                        type: "OBJECT",
-                        properties: {
-                            "problem_text": { "type": "STRING" },
-                            "correct_answer": { "type": "STRING" },
-                            "wrong_answers": { "type": "ARRAY", "items": { "type": "STRING" } }
-                        },
-                        required: ["problem_text", "correct_answer", "wrong_answers"]
-                    };
-                    break;
-                default:
-                    problemPageContent.html("<p>Hoppla! Diesen Aufgabentyp kenne ich noch nicht.</p>");
-                    return;
-            }
-
-            payload.contents = [{ role: "user", parts: [{ text: prompt }] }];
-            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API-Fehler: ${response.statusText}`);
-
-                const result = await response.json();
-                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
-                    const jsonText = result.candidates[0].content.parts[0].text;
-                    const data = JSON.parse(jsonText);
-                    displayProblem(data);
-                } else { throw new Error("Keine gültige Antwort von der API erhalten."); }
-            } catch (error) {
-                console.error("Fehler bei der Gemini-Anfrage:", error);
-                problemPageContent.html("<p>Hoppla! Da ist etwas schiefgegangen. Bitte versuche es erneut.</p>");
-            }
-        }
+        // --- HILFE-MODAL-LOGIK (Unverändert) ---
         
         // New function to render math expressions as HTML
         function renderMathHtml(text) {
@@ -1039,13 +1033,17 @@ Das Ergebnis ist 0.25.
 
             const answerOptionsDiv = select('#answerOptions');
             answers.forEach(answer => {
-                let btn = createButton(answer, 'answer-btn');
+                // Hier wird der Antworttext auch mit renderMathHtml verarbeitet, falls es ein Bruch ist
+                let btn = createButton(renderMathHtml(answer), 'answer-btn'); 
+                // Speichere den ursprünglichen String-Wert als Attribut für die Überprüfung
+                btn.attribute('data-value', answer); 
                 btn.parent(answerOptionsDiv);
                 btn.mousePressed(() => checkAnswer(answer, data.correct_answer));
             });
             
             const nextProblemButton = select('#nextProblemButton');
-            nextProblemButton.mousePressed(() => generateSpecificTask(currentTaskType));
+            // NEU: Aufruf der lokalen Generierungsfunktion beim Klick
+            nextProblemButton.mousePressed(() => generateSpecificTaskLocal(currentTaskType)); 
             
             if (problemSketch) {
                 problemSketch.remove();
@@ -1093,7 +1091,8 @@ Das Ergebnis ist 0.25.
 
             answerButtons.forEach(btn => {
                 btn.attribute('disabled', ''); 
-                if (btn.html() === correct) {
+                // Überprüfe anhand des gespeicherten data-value Attributs
+                if (btn.attribute('data-value') === correct) { 
                      btn.addClass('correct-outline');
                 }
             });
@@ -1245,4 +1244,3 @@ Das Ergebnis ist 0.25.
     </script>
 </body>
 </html>
-
